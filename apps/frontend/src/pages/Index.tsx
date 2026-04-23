@@ -103,13 +103,13 @@ const Index = () => {
           <img
             src={logo}
             alt="CareerBook logo"
-            className="h-48 w-auto md:h-64"
+            className="h-40 w-auto md:h-52"
           />
         </a>
       </header>
 
       {/* Hero */}
-      <main className="relative z-10 mx-auto flex max-w-4xl flex-col items-center px-6 pb-24 pt-10 text-center md:pt-14">
+      <main className="relative z-10 mx-auto -mt-6 flex max-w-4xl flex-col items-center px-6 pb-24 pt-0 text-center md:-mt-10">
         <h1 className="text-balance text-4xl font-bold leading-[1.1] tracking-tight text-foreground md:text-6xl">
           Your next{" "}
           <span
