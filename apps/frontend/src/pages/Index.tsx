@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Sparkles,
   ArrowRight,
@@ -9,6 +9,7 @@ import {
   Phone,
   CheckCircle2,
   Users,
+  Loader2,
 } from "lucide-react";
 import logo from "@/assets/logo.svg";
 
@@ -24,9 +25,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useWaitlistCount } from "@/hooks/useWaitlistCount";
+import { useRegister } from "@/hooks/useRegister";
 
 const Index = () => {
   const { toast } = useToast();
+  const { data: totalCount = 0 } = useWaitlistCount();
+  const registerMutation = useRegister();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -36,16 +41,11 @@ const Index = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [gender, setGender] = useState("rather-not-to-say");
   const [registered, setRegistered] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
   const [myPosition, setMyPosition] = useState<number | null>(null);
 
-  useEffect(() => {
-    const stored = parseInt(localStorage.getItem("waitlistCount") || "0", 10);
-    setTotalCount(isNaN(stored) ? 0 : stored);
-  }, []);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (
       !firstName.trim() ||
       !lastName.trim() ||
@@ -59,19 +59,32 @@ const Index = () => {
       });
       return;
     }
+
     if (password !== confirmPassword) {
       toast({ title: "Passwords do not match", variant: "destructive" });
       return;
     }
-    const newCount = totalCount + 1;
-    localStorage.setItem("waitlistCount", String(newCount));
-    setTotalCount(newCount);
-    setMyPosition(newCount);
-    toast({
-      title: "You've registered successfully! 🎉",
-      description: `You're #${newCount} on the waiting list.`,
-    });
-    setRegistered(true);
+
+    registerMutation.mutate(
+      { firstName, lastName, email, phone, password, gender },
+      {
+        onSuccess: (data) => {
+          setMyPosition(data.data.waitlistPosition);
+          setRegistered(true);
+          toast({
+            title: "You've registered successfully! 🎉",
+            description: `You're #${data.data.waitlistPosition} on the waiting list.`,
+          });
+        },
+        onError: (error: Error) => {
+          toast({
+            title: "Registration failed",
+            description: error.message,
+            variant: "destructive",
+          });
+        },
+      }
+    );
   };
 
   return (
@@ -183,7 +196,9 @@ const Index = () => {
                   <h2 className="text-xl font-bold text-foreground">
                     Create your account
                   </h2>
-                  <p className="mt-1 text-sm text-muted-foreground">{"\n"}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Join the waitlist and secure your spot
+                  </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4 text-left">
@@ -199,6 +214,7 @@ const Index = () => {
                           placeholder="First name"
                           className="pl-10"
                           required
+                          disabled={registerMutation.isPending}
                         />
                       </div>
                     </div>
@@ -211,6 +227,7 @@ const Index = () => {
                         placeholder="Last name"
                         className="mt-1"
                         required
+                        disabled={registerMutation.isPending}
                       />
                     </div>
                   </div>
@@ -227,6 +244,7 @@ const Index = () => {
                         placeholder="example@email.com"
                         className="pl-10"
                         required
+                        disabled={registerMutation.isPending}
                       />
                     </div>
                   </div>
@@ -243,6 +261,7 @@ const Index = () => {
                         placeholder="+1 (555) 000-0000"
                         className="pl-10"
                         required
+                        disabled={registerMutation.isPending}
                       />
                     </div>
                   </div>
@@ -256,9 +275,11 @@ const Index = () => {
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter password"
+                        placeholder="Enter 8-digit password"
                         className="pl-10"
                         required
+
+                        disabled={registerMutation.isPending}
                       />
                     </div>
                   </div>
@@ -272,16 +293,22 @@ const Index = () => {
                         type="password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Re-enter password"
+                        placeholder="Re-enter 8-digit password"
                         className="pl-10"
                         required
+
+                        disabled={registerMutation.isPending}
                       />
                     </div>
                   </div>
 
                   <div>
                     <Label>Gender</Label>
-                    <Select value={gender} onValueChange={setGender}>
+                    <Select
+                      value={gender}
+                      onValueChange={setGender}
+                      disabled={registerMutation.isPending}
+                    >
                       <SelectTrigger className="w-full mt-1 h-11 rounded-xl border-border/50 hover:border-primary/50 transition-colors">
                         <SelectValue placeholder="Gender" />
                       </SelectTrigger>
@@ -309,9 +336,19 @@ const Index = () => {
                     type="submit"
                     className="w-full h-12 rounded-xl text-base font-semibold shadow-[var(--shadow-glow)] hover:opacity-90"
                     style={{ background: "var(--gradient-primary)" }}
+                    disabled={registerMutation.isPending}
                   >
-                    Create account
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    {registerMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : (
+                      <>
+                        Create account
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
                   </Button>
                 </form>
               </>
