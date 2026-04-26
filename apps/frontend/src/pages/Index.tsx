@@ -358,7 +358,15 @@ const Index = () => {
       </main>
 
       <footer className="relative z-10 border-t border-border/60 py-6 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} CareerBook. All rights reserved.
+        © 2026 CareerBook. All rights reserved | Developed by{" "}
+        <a
+          href="https://ilampagency.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary hover:underline transition-colors"
+        >
+          iLamp agency
+        </a>
       </footer>
     </div>
   );
