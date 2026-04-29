@@ -60,6 +60,20 @@ const Index = () => {
       return;
     }
 
+    // Password validation
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<> ]/.test(password);
+    const isLongEnough = password.length >= 8;
+
+    if (!isLongEnough || !hasUppercase || !hasSpecial) {
+      toast({
+        title: "Weak password",
+        description: "Password must be at least 8 characters long, contain an uppercase letter, and a special character.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast({ title: "Passwords do not match", variant: "destructive" });
       return;
@@ -275,7 +289,7 @@ const Index = () => {
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter 8-digit password"
+                        placeholder="Enter password"
                         className="pl-10"
                         required
 
@@ -293,7 +307,7 @@ const Index = () => {
                         type="password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Re-enter 8-digit password"
+                        placeholder="Re-enter password"
                         className="pl-10"
                         required
 
