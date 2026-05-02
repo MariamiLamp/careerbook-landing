@@ -10,6 +10,9 @@ import {
   CheckCircle2,
   Users,
   Loader2,
+  Eye,
+  EyeOff,
+  XCircle,
 } from "lucide-react";
 import logo from "@/assets/logo.svg";
 
@@ -28,6 +31,33 @@ import { useToast } from "@/hooks/use-toast";
 import { useWaitlistCount } from "@/hooks/useWaitlistCount";
 import { useRegister } from "@/hooks/useRegister";
 
+const PasswordRequirement = ({
+  met,
+  showResult = true,
+  children,
+}: {
+  met: boolean;
+  showResult?: boolean;
+  children: string;
+}) => {
+  const Icon = showResult ? (met ? CheckCircle2 : XCircle) : CheckCircle2;
+
+  return (
+    <li
+      className={`flex items-center gap-2 text-xs ${
+        !showResult
+          ? "text-muted-foreground"
+          : met
+            ? "text-emerald-600"
+            : "text-destructive"
+      }`}
+    >
+      <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      <span>{children}</span>
+    </li>
+  );
+};
+
 const Index = () => {
   const { toast } = useToast();
   const { data: totalCount = 0 } = useWaitlistCount();
@@ -39,9 +69,20 @@ const Index = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [gender, setGender] = useState("rather-not-to-say");
   const [registered, setRegistered] = useState(false);
   const [myPosition, setMyPosition] = useState<number | null>(null);
+
+  const hasValidLength = password.length >= 8 && password.length <= 50;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  const hasTypedPassword = password.length > 0;
+  const hasTypedConfirmPassword = confirmPassword.length > 0;
+  const passwordsMatch =
+    hasTypedConfirmPassword && password === confirmPassword;
+  const isValidPassword = hasValidLength && hasUppercase && hasSpecial;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +92,8 @@ const Index = () => {
       !lastName.trim() ||
       !email.trim() ||
       !phone.trim() ||
-      !password.trim()
+      !password.trim() ||
+      !confirmPassword.trim()
     ) {
       toast({
         title: "Please fill in all required fields",
@@ -60,21 +102,17 @@ const Index = () => {
       return;
     }
 
-    // Password validation
-    const hasUppercase = /[A-Z]/.test(password);
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<> ]/.test(password);
-    const isLongEnough = password.length >= 8;
-
-    if (!isLongEnough || !hasUppercase || !hasSpecial) {
+    if (!isValidPassword) {
       toast({
         title: "Weak password",
-        description: "Password must be at least 8 characters long, contain an uppercase letter, and a special character.",
+        description:
+          "Password must be 8-50 characters long, contain an uppercase letter, and a special character.",
         variant: "destructive",
       });
       return;
     }
 
-    if (password !== confirmPassword) {
+    if (!passwordsMatch) {
       toast({ title: "Passwords do not match", variant: "destructive" });
       return;
     }
@@ -286,16 +324,54 @@ const Index = () => {
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
                         id="password"
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Enter password"
-                        className="pl-10"
+                        className="pl-10 pr-10"
+                        maxLength={50}
                         required
-
                         disabled={registerMutation.isPending}
                       />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowPassword((current) => !current)}
+                        onMouseDown={(e) => e.preventDefault()}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                        disabled={registerMutation.isPending}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
+                    <ul className="mt-2 grid gap-1">
+                      <PasswordRequirement
+                        met={hasValidLength}
+                        showResult={hasTypedPassword}
+                      >
+                        8-50 characters
+                      </PasswordRequirement>
+                      <PasswordRequirement
+                        met={hasUppercase}
+                        showResult={hasTypedPassword}
+                      >
+                        At least one uppercase letter
+                      </PasswordRequirement>
+                      <PasswordRequirement
+                        met={hasSpecial}
+                        showResult={hasTypedPassword}
+                      >
+                        At least one special character
+                      </PasswordRequirement>
+                    </ul>
                   </div>
 
                   <div>
@@ -304,16 +380,46 @@ const Index = () => {
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
                         id="confirmPassword"
-                        type="password"
+                        type={showConfirmPassword ? "text" : "password"}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Re-enter password"
-                        className="pl-10"
+                        className="pl-10 pr-10"
+                        maxLength={50}
                         required
-
                         disabled={registerMutation.isPending}
                       />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        onClick={() =>
+                          setShowConfirmPassword((current) => !current)
+                        }
+                        onMouseDown={(e) => e.preventDefault()}
+                        aria-label={
+                          showConfirmPassword
+                            ? "Hide confirm password"
+                            : "Show confirm password"
+                        }
+                        disabled={registerMutation.isPending}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
+                    <ul className="mt-2 grid gap-1">
+                      <PasswordRequirement
+                        met={passwordsMatch}
+                        showResult={hasTypedConfirmPassword}
+                      >
+                        Confirm password match
+                      </PasswordRequirement>
+                    </ul>
                   </div>
 
                   <div>
